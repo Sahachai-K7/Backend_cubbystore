@@ -58,8 +58,10 @@ export async function validatePromo(
 type DbOrTx = Pick<typeof db, 'update'>
 
 /**
- * Increment usedCount atomically inside a transaction. Caller can pass tx or db.
- * Throws if maxUses race fails.
+ * Atomically claim one use of a promo. The UPDATE locks the row, increments
+ * usedCount, and returns the post-update flags so we can re-validate state
+ * that may have changed between validatePromo (run outside the tx) and this
+ * call. Throws on any failure so the caller's transaction rolls back.
  */
 export async function consumePromo(
   tx: DbOrTx,
@@ -69,8 +71,17 @@ export async function consumePromo(
     .update(promoCodes)
     .set({ usedCount: sql`${promoCodes.usedCount} + 1` })
     .where(eq(promoCodes.id, promoId))
-    .returning({ usedCount: promoCodes.usedCount, maxUses: promoCodes.maxUses })
+    .returning({
+      usedCount: promoCodes.usedCount,
+      maxUses: promoCodes.maxUses,
+      isActive: promoCodes.isActive,
+      expiresAt: promoCodes.expiresAt,
+    })
   if (!row) throw new Error('promo_consume_failed')
+  if (!row.isActive) throw new Error('promo_inactive')
+  if (row.expiresAt && row.expiresAt <= new Date()) {
+    throw new Error('promo_expired')
+  }
   if (row.maxUses !== null && row.usedCount > row.maxUses) {
     throw new Error('promo_used_up')
   }

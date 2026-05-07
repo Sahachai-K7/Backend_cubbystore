@@ -112,7 +112,17 @@ export async function checkout(
     }
 
     if (appliedPromoId) {
-      await consumePromo(tx, appliedPromoId)
+      try {
+        await consumePromo(tx, appliedPromoId)
+      } catch (e) {
+        // Surface promo race failures (inactive/expired/used_up between
+        // validate and consume) as CheckoutError → 409 with a useful code
+        // instead of a generic 500.
+        if (e instanceof Error && e.message.startsWith('promo_')) {
+          throw new CheckoutError('invalid_promo', { reason: e.message })
+        }
+        throw e
+      }
     }
 
     const [orderRow] = await tx

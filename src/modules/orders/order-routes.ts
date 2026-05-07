@@ -87,6 +87,7 @@ const StatusFilter = t.Union([
   t.Literal('paid'),
   t.Literal('delivered'),
   t.Literal('delivery_failed'),
+  t.Literal('refunded'),
 ])
 
 export const adminOrderRoutes = new Elysia({ name: 'admin-orders' })

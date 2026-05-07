@@ -9,6 +9,7 @@ import {
   walletTransactions,
 } from '../../db/schema'
 import { adminGuard, recordAdminAction } from '../../middlewares/admin'
+import { notifyRestockSubscribers } from '../wishlist/notify'
 
 const RefundBody = t.Object({
   restoreStock: t.Optional(t.Boolean()),
@@ -78,6 +79,7 @@ export const refundRoutes = new Elysia({ name: 'admin-refund' })
 
           // Optionally restore stock
           let restoredCount = 0
+          const restoredProductIds: string[] = []
           if (body.restoreStock) {
             for (const line of lines) {
               const restored = await tx
@@ -88,6 +90,7 @@ export const refundRoutes = new Elysia({ name: 'admin-refund' })
               restoredCount += restored.length
 
               if (restored.length > 0) {
+                restoredProductIds.push(line.productId)
                 await tx
                   .update(products)
                   .set({
@@ -99,7 +102,13 @@ export const refundRoutes = new Elysia({ name: 'admin-refund' })
             }
           }
 
-          return { orderId: order.id, refundAmount: refundAmount.toFixed(2), newBalance, restoredCount }
+          return {
+            orderId: order.id,
+            refundAmount: refundAmount.toFixed(2),
+            newBalance,
+            restoredCount,
+            restoredProductIds,
+          }
         })
 
         await recordAdminAction({
@@ -115,7 +124,18 @@ export const refundRoutes = new Elysia({ name: 'admin-refund' })
           ip: clientIp,
         })
 
-        return { ok: true, ...result }
+        // Fire-and-forget restock notifications for products that came back
+        // into stock. De-dup productIds to send one email per subscriber per
+        // product even if multiple lines of the same product were refunded.
+        const uniqueProductIds = [...new Set(result.restoredProductIds)]
+        for (const pid of uniqueProductIds) {
+          notifyRestockSubscribers(pid).catch((e) =>
+            console.error('[refund] notifyRestockSubscribers', pid, e),
+          )
+        }
+
+        const { restoredProductIds: _, ...resultForResponse } = result
+        return { ok: true, ...resultForResponse }
       } catch (e) {
         if (e instanceof Error) {
           if (e.message === 'not_found') return status(404, { error: 'not_found' })
