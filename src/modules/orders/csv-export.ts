@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia'
-import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm'
+import { and, desc, eq, gte, lte, sql } from 'drizzle-orm'
 import { db } from '../../db'
-import { orderItems, orders, user as userTable } from '../../db/schema'
+import { orders, user as userTable } from '../../db/schema'
 import { adminGuard } from '../../middlewares/admin'
 
 const StatusFilter = t.Union([
@@ -64,9 +64,6 @@ export const adminOrdersCsvModule = new Elysia({ name: 'admin-orders-csv' })
         .where(where)
         .orderBy(desc(orders.createdAt))
         .limit(5000)
-
-      void asc
-      void orderItems
 
       const header = [
         'order_id',

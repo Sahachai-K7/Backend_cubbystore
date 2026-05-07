@@ -21,7 +21,7 @@ export const adminUsersModule = new Elysia({ name: 'admin-users' })
   .use(adminGuard)
   .get(
     '/api/admin/users',
-    async ({ query, status }) => {
+    async ({ query }) => {
       const conditions = []
       if (query.role) conditions.push(eq(userTable.role, query.role))
       if (query.q && query.q.trim().length > 0) {
@@ -35,8 +35,6 @@ export const adminUsersModule = new Elysia({ name: 'admin-users' })
       const limit = Math.min(Number(query.limit ?? 30), 100)
       const page = Math.max(1, Number(query.page ?? 1))
       const offset = (page - 1) * limit
-
-      void status
 
       const [items, totalRow] = await Promise.all([
         db

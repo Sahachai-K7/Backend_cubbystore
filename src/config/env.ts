@@ -51,6 +51,16 @@ export const env = {
   // Initial admin email — first user to register/login with this email is auto-promoted
   INITIAL_ADMIN_EMAIL: process.env.INITIAL_ADMIN_EMAIL ?? "",
 
+  // First-topup bonus (optional). 0 / unset = disabled.
+  FIRST_TOPUP_BONUS_PERCENT: Math.max(
+    0,
+    Number(process.env.FIRST_TOPUP_BONUS_PERCENT ?? 0),
+  ) || 0,
+  FIRST_TOPUP_BONUS_MAX: Math.max(
+    0,
+    Number(process.env.FIRST_TOPUP_BONUS_MAX ?? 100),
+  ) || 100,
+
   // S3-compatible storage for product images (Cloudflare R2 / MinIO / AWS S3)
   S3_ENDPOINT: process.env.S3_ENDPOINT ?? "",
   S3_REGION: optional("S3_REGION", "auto"),

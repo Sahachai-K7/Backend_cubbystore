@@ -2,6 +2,7 @@ import { Elysia } from 'elysia'
 import { and, eq, gt, sql } from 'drizzle-orm'
 import { db } from '../../db'
 import { topups, walletTransactions, webhookEvents } from '../../db/schema'
+import { env } from '../../config/env'
 import { getWebhookConfig } from '../../lib/config-store'
 import { verifyApiKey } from '../../lib/api-key'
 import { getClientIp } from '../../lib/client-ip'
@@ -158,8 +159,8 @@ export const webhookRoutes = new Elysia({ name: 'webhook-routes' }).post(
       })
 
       // Apply first-top-up bonus if enabled and this is user's first topup
-      const bonusPercent = Number(process.env.FIRST_TOPUP_BONUS_PERCENT ?? 0)
-      const bonusMax = Number(process.env.FIRST_TOPUP_BONUS_MAX ?? 100)
+      const bonusPercent = env.FIRST_TOPUP_BONUS_PERCENT
+      const bonusMax = env.FIRST_TOPUP_BONUS_MAX
       let bonusApplied = 0
       if (bonusPercent > 0) {
         const priorTopups = await tx
