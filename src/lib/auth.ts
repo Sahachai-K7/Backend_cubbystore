@@ -46,10 +46,31 @@ export const auth = betterAuth({
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user: u, url }) => {
+      // Ensure the verify link lands users on a friendly FE page after
+      // success. If the caller (signUp / resend) didn't set callbackURL,
+      // default to the first HTTPS frontend origin + /email-verified.
+      let finalUrl = url
+      try {
+        const parsed = new URL(url)
+        if (!parsed.searchParams.get('callbackURL')) {
+          const feOrigin =
+            env.FRONTEND_ORIGINS.find((o) => o.startsWith('https://')) ??
+            env.FRONTEND_ORIGINS[0]
+          if (feOrigin) {
+            parsed.searchParams.set(
+              'callbackURL',
+              `${feOrigin}/email-verified`,
+            )
+            finalUrl = parsed.toString()
+          }
+        }
+      } catch {
+        // unparseable url — leave it
+      }
       await sendVerificationEmail({
         to: u.email,
         customerName: u.name ?? null,
-        url,
+        url: finalUrl,
       })
     },
   },
