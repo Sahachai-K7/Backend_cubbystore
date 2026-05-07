@@ -1,15 +1,34 @@
 {
-  "name": "Backend-app",
-  "version": "1.0.50",
+  "name": "backend-app",
+  "version": "0.1.0",
+  "module": "src/index.ts",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "bun run src/db/migrate.ts",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "elysia": "latest"
+    "@elysiajs/cors": "latest",
+    "@elysiajs/static": "^1.4.10",
+    "@react-email/components": "latest",
+    "@react-email/render": "latest",
+    "better-auth": "latest",
+    "drizzle-orm": "latest",
+    "elysia": "latest",
+    "postgres": "latest",
+    "promptpay-qr": "latest",
+    "qrcode": "latest",
+    "resend": "latest"
   },
   "devDependencies": {
-    "bun-types": "latest"
-  },
-  "module": "src/index.js"
+    "@types/bun": "latest",
+    "@types/qrcode": "latest",
+    "@types/react": "^19.2.14",
+    "drizzle-kit": "latest",
+    "typescript": "latest"
+  }
 }

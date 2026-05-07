@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1778090993051,
+      "tag": "0000_curious_doomsday",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778104502784,
+      "tag": "0001_panoramic_luminals",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778114297516,
+      "tag": "0002_aromatic_charles_xavier",
+      "breakpoints": true
+    }
+  ]
+}
