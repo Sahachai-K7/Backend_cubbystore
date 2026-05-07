@@ -50,6 +50,10 @@ const app = new Elysia()
     staticPlugin({
       assets: PRODUCT_UPLOAD_DIR,
       prefix: "/uploads/products",
+      // Don't cache the directory listing — admins upload at runtime
+      // and pre-scanned files would 404 until next restart.
+      alwaysStatic: false,
+      noCache: true,
     }),
   )
   .use(authRoutes)
