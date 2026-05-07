@@ -88,11 +88,20 @@ const app = new Elysia()
   .get("/api/admin/ping", ({ user, clientIp }) => ({ user, clientIp }), {
     requireAdmin: true,
   })
-  .onError(({ code, error, set }) => {
+  .onError(({ code, error, request, set }) => {
+    const path = (() => {
+      try {
+        return new URL(request.url).pathname;
+      } catch {
+        return request.url;
+      }
+    })();
     console.error(
       "[unhandled]",
       code,
-      error instanceof Error ? error.stack : error,
+      request.method,
+      path,
+      error instanceof Error ? error.message : error,
     );
     if (code === "VALIDATION") {
       set.status = 400;
