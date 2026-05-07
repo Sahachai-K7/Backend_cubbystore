@@ -6,6 +6,7 @@ import {
   jsonb,
   pgEnum,
   integer,
+  index,
 } from 'drizzle-orm/pg-core'
 import { user } from './auth'
 
@@ -17,16 +18,22 @@ export const webhookStatusEnum = pgEnum('webhook_status', [
   'invalid_payload',
 ])
 
-export const webhookEvents = pgTable('webhook_events', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  rawBody: text('raw_body').notNull(),
-  headers: jsonb('headers'),
-  sourceIp: text('source_ip'),
-  parsedAmount: numeric('parsed_amount', { precision: 12, scale: 2 }),
-  status: webhookStatusEnum('status').notNull(),
-  matchedTopupId: text('matched_topup_id'),
-  receivedAt: timestamp('received_at').notNull().defaultNow(),
-})
+export const webhookEvents = pgTable(
+  'webhook_events',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    rawBody: text('raw_body').notNull(),
+    headers: jsonb('headers'),
+    sourceIp: text('source_ip'),
+    parsedAmount: numeric('parsed_amount', { precision: 12, scale: 2 }),
+    status: webhookStatusEnum('status').notNull(),
+    matchedTopupId: text('matched_topup_id'),
+    receivedAt: timestamp('received_at').notNull().defaultNow(),
+  },
+  (t) => ({
+    receivedAtIdx: index('webhook_events_received_at_idx').on(t.receivedAt),
+  }),
+)
 
 export const webhookConfig = pgTable('webhook_config', {
   id: integer('id').primaryKey(),

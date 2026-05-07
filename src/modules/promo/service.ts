@@ -23,11 +23,13 @@ export async function validatePromo(
   code: string,
   subtotal: number,
 ): Promise<PromoValidationResult> {
-  const normalized = code.trim().toUpperCase()
+  // Match case-insensitively so admin codes like "Summer2026" or "abc123"
+  // work even if the user types them differently.
+  const normalized = code.trim()
   const rows = await db
     .select()
     .from(promoCodes)
-    .where(eq(promoCodes.code, normalized))
+    .where(sql`LOWER(${promoCodes.code}) = LOWER(${normalized})`)
     .limit(1)
   const promo = rows[0]
   if (!promo) return { valid: false, error: 'not_found' }

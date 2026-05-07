@@ -1,11 +1,10 @@
 import { Elysia } from 'elysia'
-import { and, desc, eq, gte, sql } from 'drizzle-orm'
+import { and, desc, eq, gte, ne, sql } from 'drizzle-orm'
 import { db } from '../../db'
 import {
   orders,
   orderItems,
   products,
-  stockItems,
   topups,
   user as userTable,
   walletTransactions,
@@ -39,28 +38,43 @@ export const adminDashboardModule = new Elysia({ name: 'admin-dashboard' })
         pendingTopups,
         walletLiability,
       ] = await Promise.all([
-        // sales today
+        // sales today (excludes refunded so revenue isn't inflated)
         db
           .select({
             total: sql<string>`COALESCE(SUM(total), 0)::text`,
             count: sql<number>`COUNT(*)::int`,
           })
           .from(orders)
-          .where(gte(orders.createdAt, startOfToday)),
+          .where(
+            and(
+              gte(orders.createdAt, startOfToday),
+              ne(orders.status, 'refunded'),
+            ),
+          ),
         db
           .select({
             total: sql<string>`COALESCE(SUM(total), 0)::text`,
             count: sql<number>`COUNT(*)::int`,
           })
           .from(orders)
-          .where(gte(orders.createdAt, last7d)),
+          .where(
+            and(
+              gte(orders.createdAt, last7d),
+              ne(orders.status, 'refunded'),
+            ),
+          ),
         db
           .select({
             total: sql<string>`COALESCE(SUM(total), 0)::text`,
             count: sql<number>`COUNT(*)::int`,
           })
           .from(orders)
-          .where(gte(orders.createdAt, last30d)),
+          .where(
+            and(
+              gte(orders.createdAt, last30d),
+              ne(orders.status, 'refunded'),
+            ),
+          ),
         // orders by status
         db
           .select({
@@ -108,7 +122,7 @@ export const adminDashboardModule = new Elysia({ name: 'admin-dashboard' })
           )
           .orderBy(desc(products.soldCount))
           .limit(5),
-        // top sellers in last 30 days
+        // top sellers in last 30 days (excludes refunded orders)
         db
           .select({
             productId: orderItems.productId,
@@ -120,7 +134,12 @@ export const adminDashboardModule = new Elysia({ name: 'admin-dashboard' })
           .from(orderItems)
           .innerJoin(orders, eq(orderItems.orderId, orders.id))
           .leftJoin(products, eq(orderItems.productId, products.id))
-          .where(gte(orders.createdAt, last30d))
+          .where(
+            and(
+              gte(orders.createdAt, last30d),
+              ne(orders.status, 'refunded'),
+            ),
+          )
           .groupBy(orderItems.productId, products.name, products.slug)
           .orderBy(sql`SUM(${orderItems.qty}) DESC`)
           .limit(5),
@@ -146,11 +165,9 @@ export const adminDashboardModule = new Elysia({ name: 'admin-dashboard' })
         paid: 0,
         delivered: 0,
         delivery_failed: 0,
+        refunded: 0,
       }
       for (const r of ordersStatus) statusMap[r.status] = Number(r.count)
-
-      // touch unused stockItems import to silence future lint
-      void stockItems
 
       return {
         sales: {
@@ -171,6 +188,7 @@ export const adminDashboardModule = new Elysia({ name: 'admin-dashboard' })
           paid: statusMap.paid ?? 0,
           delivered: statusMap.delivered ?? 0,
           deliveryFailed: statusMap.delivery_failed ?? 0,
+          refunded: statusMap.refunded ?? 0,
         },
         users: {
           newLast24h: Number(newUsers[0]?.count ?? 0),
