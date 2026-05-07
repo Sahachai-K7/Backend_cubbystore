@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
 import { cors } from "@elysiajs/cors";
-import { staticPlugin } from "@elysiajs/static";
 import { env, isProd } from "./config/env";
 import { authRoutes } from "./modules/auth/routes";
 import { authContext } from "./middlewares/auth";
@@ -23,6 +22,7 @@ import { adminConfigModule } from "./modules/admin-config";
 import { adminIpModule } from "./modules/admin-ip";
 import { adminWebhookEventsModule } from "./modules/admin-webhook/events";
 import { startWebhookEventsRetentionJob } from "./modules/admin-webhook/cleanup";
+import { migrateLegacyImagesIfNeeded } from "./lib/migrate-uploads-to-r2";
 import {
   publicReviews,
   userReviews,
@@ -36,7 +36,6 @@ import { adminAuditModule } from "./modules/admin-audit";
 import { adminPromoModule } from "./modules/promo/admin-routes";
 import { publicPromoRoutes } from "./modules/promo/public-routes";
 import { wishlistRoutes } from "./modules/wishlist/routes";
-import { PRODUCT_UPLOAD_DIR } from "./lib/uploads";
 
 const app = new Elysia()
   .use(
@@ -46,16 +45,6 @@ const app = new Elysia()
     }),
   )
   .use(rateLimitMiddleware)
-  .use(
-    staticPlugin({
-      assets: PRODUCT_UPLOAD_DIR,
-      prefix: "/uploads/products",
-      // Don't cache the directory listing — admins upload at runtime
-      // and pre-scanned files would 404 until next restart.
-      alwaysStatic: false,
-      noCache: true,
-    }),
-  )
   .use(authRoutes)
   .use(authContext)
   .use(adminGuard)
@@ -131,6 +120,12 @@ const app = new Elysia()
   .listen(env.PORT);
 
 startWebhookEventsRetentionJob();
+
+// Move any rows still pointing at the old /uploads/* local paths into S3.
+// Idempotent: skips if no legacy rows or storage is not configured.
+migrateLegacyImagesIfNeeded().catch((e) =>
+  console.error("[migrate-uploads-to-r2]", e),
+);
 
 console.log(
   `🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`,

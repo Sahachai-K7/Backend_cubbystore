@@ -50,6 +50,16 @@ export const env = {
 
   // Initial admin email — first user to register/login with this email is auto-promoted
   INITIAL_ADMIN_EMAIL: process.env.INITIAL_ADMIN_EMAIL ?? "",
+
+  // S3-compatible storage for product images (Cloudflare R2 / MinIO / AWS S3)
+  S3_ENDPOINT: process.env.S3_ENDPOINT ?? "",
+  S3_REGION: optional("S3_REGION", "auto"),
+  S3_BUCKET: process.env.S3_BUCKET ?? "",
+  S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID ?? "",
+  S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY ?? "",
+  // Public-facing URL prefix that serves uploaded objects (custom domain or r2.dev)
+  // Files become available at `${S3_PUBLIC_URL}/products/<uuid>.png`
+  S3_PUBLIC_URL: (process.env.S3_PUBLIC_URL ?? "").replace(/\/+$/, ""),
 };
 
 export const isProd = env.NODE_ENV === "production";

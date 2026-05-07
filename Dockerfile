@@ -18,7 +18,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY package.json bun.lock ./
 COPY src ./src
 
-# Persist uploads dir; in production mount /app/uploads as a volume
+# Migration source: rows still pointing at /uploads/* will be moved into S3
+# on first boot. Mount the existing volume here once during the cutover, then
+# you can remove the mount after migration completes.
 RUN mkdir -p /app/uploads/products && chown -R app:app /app
 
 USER app

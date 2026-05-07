@@ -244,14 +244,14 @@ export const adminProducts = new Elysia({ prefix: '/api/admin/products' })
 
       const [row] = await db
         .update(products)
-        .set({ imageUrl: saved.publicPath, updatedAt: new Date() })
+        .set({ imageUrl: saved.url, updatedAt: new Date() })
         .where(eq(products.id, params.id))
         .returning()
       await recordAdminAction({
         adminId: user.id,
         action: 'product.image.update',
         target: params.id,
-        payload: { imageUrl: saved.publicPath, bytes: saved.bytes },
+        payload: { imageUrl: saved.url, bytes: saved.bytes },
         ip: clientIp,
       })
       return { item: row }

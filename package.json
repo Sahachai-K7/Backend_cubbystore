@@ -12,6 +12,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1044.0",
     "@elysiajs/cors": "latest",
     "@elysiajs/static": "^1.4.10",
     "@react-email/components": "latest",
